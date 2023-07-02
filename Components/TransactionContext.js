@@ -40,6 +40,11 @@ export const TransactionProvider = ({ children }) => {
   const [busdBalance, setBusdBalance] = useState("");
   const [isSale, setIsSale] = useState(false);
   const [amountInPrice, setAmountInPrice] = useState("");
+  const [amountAlreadyClaimed, setAmountAlreadyClaimed] = useState("0.00");
+  const [sumWithdrawableAmount, setSumWithdrawableAmount] = useState('')
+  const [amountInPriceMinusTotalClaimed, setAmountInPriceMinusTotalClaimed] = useState('')
+  const [alreadyClaimed, setAlreadyClaimed] = useState(false);
+
   // const [getAmountInPrice, setGetAmountInPrice] = useState()
 
   // const [selectedToken, setSelectedToken] = useState();
@@ -47,7 +52,9 @@ export const TransactionProvider = ({ children }) => {
   // let BUSD = "0xab1a4d4f1d656d2450692d237fdd6c7f9146e814";
 
   const contractAddress = "0xd6243011626ac6765Cb398B9Ed7cbEAbE7c5Ee19";
-  const newTKContractAddress = "0xe3a85ee627538aE4a16243E5534426866525BB37";
+  const newTKContractAddress = "0xDB3BD38A44D6AA699268a95C66734b105e113F19";
+  // const newTKContractAddress = "0xe3a85ee627538aE4a16243E5534426866525BB37";
+    
   const bscAddress = "0xe9e7CEA3DedcA5984780Bafc599bD69ADd087D56";
   const address = useAddress();
 
@@ -125,8 +132,8 @@ export const TransactionProvider = ({ children }) => {
           "https://bsc-dataseed1.binance.org/"
         );
         // const signer = provider.getSigner();
-        const profile = new ethers.Contract(bscAddress, bscAbi, provider);
-        const bal = await profile.balanceOf(address);
+        const contractInstance = new ethers.Contract(bscAddress, bscAbi, provider);
+        const bal = await contractInstance.balanceOf(address);
         const balance = ethers.utils.formatEther(bal, "ether");
         const etherAmountAsNumber = parseFloat(balance.toString());
         const roundedEtherAmount = etherAmountAsNumber.toFixed(3);
@@ -156,19 +163,14 @@ export const TransactionProvider = ({ children }) => {
     }
   };
 
-  // function handleV1Change(event) {
-  //   const inputValue = event.target.value;
-  //   setV1(inputValue);
-  // }
-
   //BNB TO KC
   useEffect(() => {
     const Price = async () => {
       try {
         const provider = new ethers.providers.Web3Provider(window.ethereum);
         const signer = provider.getSigner();
-        const profile = new ethers.Contract(contractAddress, routerAbi, signer);
-        const max = await profile.price();
+        const contractInstance = new ethers.Contract(contractAddress, routerAbi, signer);
+        const max = await contractInstance.price();
         const maxPrice = ethers.utils.formatEther(max, "ether");
         const formattedPrice = parseFloat(maxPrice.toLocaleString());
         // const rounddedkcPrice = formattedPrice.toFixed(6);
@@ -191,12 +193,12 @@ export const TransactionProvider = ({ children }) => {
         );
 
         // const signer = provider.getSigner();
-        const profile = new ethers.Contract(
+        const contractInstance = new ethers.Contract(
           contractAddress,
           routerAbi,
           provider
         );
-        const max = await profile.minLockForEachUser();
+        const max = await contractInstance.minLockForEachUser();
         const minlock = ethers.utils.formatUnits(max, "ether");
         const formattedMinLock = minlock.toLocaleString();
         setMinLock(formattedMinLock);
@@ -212,17 +214,16 @@ export const TransactionProvider = ({ children }) => {
   useEffect(() => {
     const MaxLockForEachUser = async () => {
       try {
-        // const provider = new ethers.providers.Web3Provider(window.ethereum);
         const provider = new ethers.getDefaultProvider(
           "https://bsc-dataseed1.binance.org/"
         );
         // const signer = provider.getSigner();
-        const profile = new ethers.Contract(
+        const contractInstance = new ethers.Contract(
           contractAddress,
           routerAbi,
           provider
         );
-        const max = await profile.maxLockForEachUser();
+        const max = await contractInstance.maxLockForEachUser();
         const maxlock = ethers.utils.formatUnits(max, "ether");
         const formattedMaxLock = maxlock.toLocaleString();
         setMaxLock(formattedMaxLock);
@@ -237,17 +238,16 @@ export const TransactionProvider = ({ children }) => {
   useEffect(() => {
     const ExpectedTotalLockfund = async () => {
       try {
-        // const provider = new ethers.providers.Web3Provider(window.ethereum);
         const provider = new ethers.getDefaultProvider(
           "https://bsc-dataseed1.binance.org/"
         );
         // const signer = provider.getSigner();
-        const profile = new ethers.Contract(
+        const contractInstance = new ethers.Contract(
           contractAddress,
           routerAbi,
           provider
         );
-        const max = await profile.expectedTotalLockFunds();
+        const max = await contractInstance.expectedTotalLockFunds();
         const expectedlock = ethers.utils.formatUnits(max, "ether");
         const formattedExpectedLock = expectedlock.toLocaleString();
         setExpectedLock(formattedExpectedLock);
@@ -267,12 +267,12 @@ export const TransactionProvider = ({ children }) => {
           "https://bsc-dataseed1.binance.org/"
         );
         // const signer = provider.getSigner();
-        const profile = new ethers.Contract(
+        const contractInstance = new ethers.Contract(
           contractAddress,
           routerAbi,
           provider
         );
-        const max = await profile.lockedFunds();
+        const max = await contractInstance.lockedFunds();
         const fundLock = ethers.utils.formatUnits(max, "ether");
         const formattedLock = parseFloat(fundLock.toString());
         setLockFund(formattedLock.toFixed(2));
@@ -283,48 +283,64 @@ export const TransactionProvider = ({ children }) => {
     LockedFunds();
   }, []);
 
-  let formattedNextClaimTime;
+  const testAddress1 = '0xe215ad900629f5929019d914c79d936ef558542d'
+  const testAddress2 = '0x204A599fB5cbA13007006bc0CA97fa75C389BA59'
+
+   useEffect(() => {
+    const getAmountAlreadyClaimed = async () => {
+      try {
+        const provider = new ethers.getDefaultProvider(
+          "https://bsc-dataseed1.binance.org/"
+        );
+        // const signer = provider.getSigner();
+        const contractInstance = new ethers.Contract(
+          newTKContractAddress,
+          theKingdomAbi,
+          provider
+        );
+        const alreadyClaimed = await contractInstance.claimed(address)
+        setAlreadyClaimed(alreadyClaimed);
+
+        console.log(alreadyClaimed)
+         const max = await contractInstance.getAmountAlreadyClaimed(address);
+         const amountAlreadyClaimed = ethers.utils.formatUnits(max, "ether");
+         const formattedAmountAlreadyClaimed = parseFloat(amountAlreadyClaimed.toString());
+
+       if(alreadyClaimed){
+         setAmountInPriceMinusTotalClaimed("0");
+         setAmountAlreadyClaimed(formattedAmountAlreadyClaimed.toFixed(2));
+         setSumWithdrawableAmount(formattedAmountAlreadyClaimed.toFixed(2));
+        } else {
+          const max = await contractInstance.getSumWithdrawableAmount(address);
+          const sumWithdrawable = ethers.utils.formatUnits(max, "ether");
+          const formattedSumWithdrawable = parseFloat(sumWithdrawable.toString());
+          const totalAmountInPriceMinusTotalClaimed =  amountAlreadyClaimed - sumWithdrawable
+         setAmountAlreadyClaimed(formattedAmountAlreadyClaimed.toFixed(2));
+          setSumWithdrawableAmount(formattedSumWithdrawable.toFixed(2));
+         setAmountInPriceMinusTotalClaimed(totalAmountInPriceMinusTotalClaimed.toFixed(2));
+        }
+      } catch (error) {
+        console.error(error);
+      }
+    };
+    getAmountAlreadyClaimed();
+  }, [address]);
+
 
   //USERSTORAGE
   useEffect(() => {
     const UserStorage = async () => {
       try {
-        // const provider = new ethers.providers.Web3Provider(window.ethereum);
         const provider = new ethers.getDefaultProvider(
           "https://bsc-dataseed1.binance.org/"
         );
         // const signer = provider.getSigner();
-        const profile = new ethers.Contract(
+        const contractInstance = new ethers.Contract(
           newTKContractAddress,
           theKingdomAbi,
           provider
         );
-        const max = await profile.userStorage(address);
-
-        // amount in price = getSumWithdrawableAmount(address) ✅
-        // const userStore = userStorage(address) ✅
-        // total claim = userStore[0]; ✅
-        // next claim amount = amount in price / 4 ✅
-        // next claim time = userStore[2] ✅
-
-        //GetAmountInPrice
-        const getAmount = await profile.getSumWithdrawableAmount(address);
-        const fundLock = ethers.utils.formatUnits(getAmount, "ether");
-        const formattedLock = parseFloat(fundLock.toString());
-        setAmountInPrice(formattedLock.toFixed(3));
-
-        // TOTAL CLAIM
-        const max0 = max[0];
-        const TotalClaim = ethers.utils.formatUnits(max0, "ether");
-        const formattedTotalClaim = parseFloat(TotalClaim.toString());
-        setTotalClaim(formattedTotalClaim.toFixed(3));
-        console.log(formattedNextClaimTime);
-
-        // next claim amount = amount in price / 4
-        let priceAmount = amountInPrice / 4;
-        setNextClaimAmonut(priceAmount);
-
-        const UnixEpoch = "1/1/1970, 1:00:00 AM";
+        const max = await contractInstance.userStorage(address);
 
         // NEXT CLAIM TIME
         const max4 = max[2];
@@ -352,14 +368,11 @@ export const TransactionProvider = ({ children }) => {
     try {
       const provider = new ethers.providers.Web3Provider(window.ethereum);
       const signer = provider.getSigner();
-      const profile = new ethers.Contract(bscAddress, bscAbi, signer);
+      const contractInstance = new ethers.Contract(bscAddress, bscAbi, signer);
       const value = ethers.utils.parseUnits(v1, "ether");
-      const tx = await profile.approve(contractAddress, value, {
+      const tx = await contractInstance.approve(contractAddress, value, {
         gasLimit: 51000,
       });
-
-      // setV1("");
-      // setV2("");
 
       const receipt = await tx.wait();
 
@@ -369,7 +382,6 @@ export const TransactionProvider = ({ children }) => {
         success();
         setStatus("success");
 
-        //   // Set tokenIn state variable to BUSD if it is not already set
       } else {
         error();
         setStatus("error");
@@ -380,8 +392,6 @@ export const TransactionProvider = ({ children }) => {
       console.error(error);
     }
     setIsLoading(false);
-    // setTokenIn(bscAddress);
-    // setBusdAmount(v1);
   };
 
   let tx;
@@ -394,9 +404,6 @@ export const TransactionProvider = ({ children }) => {
       const signer = provider.getSigner();
       const contract = new ethers.Contract(contractAddress, routerAbi, signer);
       const __amount = ethers.utils.parseUnits(v1, "ether");
-
-      // const sale = await contract.saleActive();
-      // setIsSaleActive(sale);
 
       let tx; // declare tx outside the if-else block
 
@@ -456,54 +463,6 @@ export const TransactionProvider = ({ children }) => {
     } catch (err) {}
   };
 
-  //CLAIM F(X)
-  // const handleClaim = async () => {
-  //   setSpinLoading(true);
-  //   try {
-  //     const provider = new ethers.providers.Web3Provider(window.ethereum);
-  //     const signer = provider.getSigner();
-  //     const contract = new ethers.Contract(contractAddress, routerAbi, signer);
-  //     // const amount = ethers.utils.parseUnits("0.1", "gwei");
-
-  //     // Check if the "Next Claim Date" has passed
-  //     const now = new Date();
-  //     const currentDateTime = now.toLocaleString();
-  //     const nextClaimTimestamp = nextClaimTime;
-
-  //     if (currentDateTime < nextClaimTimestamp) {
-  //       // Disable the button
-  //       setIsNextClaimDate(true);
-  //       console.log(isNextClaimDate, "true");
-  //     } else {
-  //       // Enable the button
-  //       setIsNextClaimDate(false);
-  //       console.log(isNextClaimDate, "false");
-  //     }
-
-  //     const tx = await contract.claimKingdomCoin({
-  //       gasLimit: 500000,
-  //       gasPrice: ethers.utils.parseUnits("10.0", "gwei"),
-  //     });
-  //     const receipt = await tx.wait();
-
-  //     //   check if the transaction was successful
-  //     if (receipt.status === 1) {
-  //       success();
-  //       setStatus("success");
-  //     } else {
-  //       error();
-  //       setStatus("error");
-  //     }
-  //   } catch (err) {
-  //     console.error(err);
-  //     error();
-  //     setStatus("error");
-  //   }
-  //   setSpinLoading(false);
-  // };
-
-  //SAMPLE CLAIM F(X)
-
   const handleClaim = async () => {
     setSpinLoading(true);
     try {
@@ -547,6 +506,10 @@ export const TransactionProvider = ({ children }) => {
   return (
     <TransactionContext.Provider
       value={{
+        alreadyClaimed,
+        sumWithdrawableAmount,
+        amountAlreadyClaimed,
+        amountInPriceMinusTotalClaimed,
         amountInPrice,
         expectedLock,
         isSale,

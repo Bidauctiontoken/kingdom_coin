@@ -48,6 +48,10 @@ export default function MyComponent() {
     busdBalance,
     setChangeToken,
     IsSaleACtive,
+    sumWithdrawableAmount,
+    amountAlreadyClaimed,
+    amountInPriceMinusTotalClaimed,
+    alreadyClaimed,
   } = useContext(TransactionContext);
 
   // const tokens = [
@@ -139,7 +143,6 @@ export default function MyComponent() {
       >
         <div className="modalContent">
           {tokens.map((e, i) => {
-            // console.log(e.img, "img");
             return (
               <div
                 key={i}
@@ -296,23 +299,26 @@ export default function MyComponent() {
             <div className="contentForText">
               <p>Amount In Price</p>
               <strong>
-                {amountInPrice} {tkc}
+                {amountAlreadyClaimed} {tkc}
               </strong>
             </div>
             <div className="contentForText">
               <p>Total Claim</p>
               <strong>
-                {totalClaim} {tkc}
+                {sumWithdrawableAmount} {tkc}
               </strong>
             </div>
             <div className="contentForText">
               <p>Next Claim Amount</p>
-              <strong> {nextClaimAmount} TKC</strong>
+              <strong> {amountInPriceMinusTotalClaimed} TKC</strong>
             </div>
             <div className="contentForText">
               <p>Next Claim Time</p>
               <strong> {nextClaimTime}</strong>
             </div>
+
+            {!alreadyClaimed && (
+              
             <div className="claimButton">
               {/* <button
                 onClick={() => handleClaim()}
@@ -332,6 +338,8 @@ export default function MyComponent() {
                   "CLAIM"
                 )}
               </button> */}
+                
+          
               <button
                 onClick={() => handleClaim()}
                 className={isNextClaimDate ? "disAble" : "claim"}
@@ -352,6 +360,8 @@ export default function MyComponent() {
                 )}
               </button>
             </div>
+              )} 
+
           </div>
           <div>
             <div className="progress">
